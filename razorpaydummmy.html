@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Razorpay Payment</title>
+  </head>
+  <body>
+    <h2>Test Razorpay Payment</h2>
+    <button id="pay-btn">Pay Now</button>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+    const razorpayKey = "rzp_test_uQF2cc8k062609";  // ✅ Replace with your actual key
+    const order_id = "order_R7wRubscGDvUQG";        // ✅ Use actual Razorpay Order ID
+
+    const options = {
+      key: razorpayKey,
+      order_id: order_id,
+      name: "Connexon",
+      description: "Membership Plan",
+      image: "", // Optional: logo URL
+      handler: function (response) {
+        alert("Payment completed!");
+        console.log("Payment Response:", response);
+
+        // ✅ Send to your backend to verify
+        fetch("http://localhost:5000/api/payment/verify-payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          console.log("Verification Result:", data);
+          alert(data.message);
+        })
+        .catch(err => console.error("Verification Error:", err));
+      },
+      theme: {
+        color: "#3399cc"
+      }
+    };
+
+    document.getElementById("pay-btn").onclick = function (e) {
+      const rzp = new Razorpay(options);
+      rzp.open();
+      e.preventDefault();
+    };
+  </script>
+  </body>
+</html>
