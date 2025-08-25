@@ -88,23 +88,29 @@ exports.createUser = async (req, res) => {
         const newUserFields = {};
 
         // ----- Field Validations -----
+        // First Name (required)
         if (!first_name || typeof first_name !== 'string' || first_name.trim() === '') {
             return res.status(400).json({ path: 'first_name', message: 'First name is required and cannot be empty' });
         }
         newUserFields.first_name = first_name.trim();
 
-        if (middle_name !== undefined) {
+        // Middle Name (optional)
+        if (middle_name !== undefined && middle_name !== null) {
             if (typeof middle_name !== 'string') {
                 return res.status(400).json({ path: 'middle_name', message: 'Middle name must be a string' });
             }
             newUserFields.middle_name = middle_name.trim();
         }
 
-        if (!last_name || typeof last_name !== 'string' || last_name.trim() === '') {
-            return res.status(400).json({ path: 'last_name', message: 'Last name is required and cannot be empty' });
+        // Last Name (optional)
+        if (last_name !== undefined && last_name !== null && last_name !== '') {
+            if (typeof last_name !== 'string') {
+                return res.status(400).json({ path: 'last_name', message: 'Last name must be a string' });
+            }
+            newUserFields.last_name = last_name.trim();
         }
-        newUserFields.last_name = last_name.trim();
 
+        // Email (required)
         if (!email || typeof email !== 'string' || !validator.isEmail(email)) {
             return res.status(400).json({ path: 'email', message: 'Valid email is required' });
         }
@@ -114,13 +120,15 @@ exports.createUser = async (req, res) => {
         }
         newUserFields.email = email.toLowerCase();
 
+        // Password (required)
         if (!password || typeof password !== 'string' || password.length < 6) {
             return res.status(400).json({ path: 'password', message: 'Password is required and must be at least 6 characters' });
         }
         const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
         newUserFields.password_hash = await bcrypt.hash(password, saltRounds);
 
-        if (dob !== undefined) {
+        // Date of Birth (optional)
+        if (dob !== undefined && dob !== null && dob !== '') {
             const date = new Date(dob);
             if (isNaN(date.getTime())) {
                 return res.status(400).json({ path: 'dob', message: 'Invalid date format (use YYYY-MM-DD)' });
@@ -128,7 +136,8 @@ exports.createUser = async (req, res) => {
             newUserFields.dob = dob; // store as provided
         }
 
-        if (address !== undefined) {
+        // Address (optional)
+        if (address !== undefined && address !== null && address !== '') {
             if (typeof address !== 'string' || address.trim() === '') {
                 return res.status(400).json({ path: 'address', message: 'Address must be a non-empty string' });
             }
@@ -171,6 +180,7 @@ exports.createUser = async (req, res) => {
         return res.status(500).json({ path: 'server', message: 'Internal server error' });
     }
 };
+
 
 
 exports.getAllUsers = async (req, res) => {

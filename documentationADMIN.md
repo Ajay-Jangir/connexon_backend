@@ -58,7 +58,7 @@ Authenticate an admin using their email and password. On success, returns a JWT 
 
 ### 1. Create User
 
-**POST** `/admin/user/create`  
+**POST** `/api/admin/user/create`  
 Create a new user by the admin.
 
 **Headers**
@@ -125,7 +125,7 @@ Create a new user by the admin.
 
 ## ✏️ Get all User in admin
 
-### **GET** `/api/admin/users`
+### **GET** `/api/admin/user`
 
 ### Description
 Fetches a list of all registered users with their associated phone numbers.
@@ -142,28 +142,86 @@ Fetches a list of all registered users with their associated phone numbers.
   "message": "Users fetched successfully",
   "data": [
     {
-      "id": 1,
+      "id": 17,
       "first_name": "Ajay",
-      "middle_name": null,
-      "last_name": "Kumar",
+      "middle_name": "Kumar",
+      "last_name": "Jangir",
+      "full_name": "Ajay Kumar Jangir",
       "email": "ajay@example.com",
-      "dob": "2000-01-01",
+      "dob": "2002-12-14",
       "address": "Delhi, India",
+      "status": "active",
+      "current_plan_start": "2025-09-10T09:52:21.897Z",
+      "current_plan_end": "2025-09-30T09:52:21.897Z",
+      "membership_plan_id": 4,
+      "created_at": "2025-08-20T07:50:52.741Z",
+      "updated_at": "2025-08-21T09:53:07.831Z",
       "phone_numbers": [
-        { "country_code": "+91", "phone_number": "9876543210" },
-        { "country_code": "+1",  "phone_number": "5551234567" }
-      ]
-    },
-    ...
+        { "id": 34, "country_code": "+91", "phone_number": "9844311100" },
+        { "id": 35, "country_code": "+91", "phone_number": "9125178910" },
+        { "id": 36, "country_code": "+1",  "phone_number": "5121456107" }
+      ],
+      "active_qr_code": {
+        "id": 26,
+        "user_id": 17,
+        "qr_code_data": "data:image/png;base64,...",
+        "vcard": "BEGIN:VCARD\r\nVERSION:3.0\r\n...",
+        "is_active": true,
+        "expires_at": "2025-09-30T15:22:21.897191",
+        "created_at": "2025-08-21T15:24:01.39809",
+        "qr_disabled_by_admin": false
+      },
+      "active_payment": {
+        "id": 41,
+        "user_id": 17,
+        "plan_id": 4,
+        "amount": 199.99,
+        "payment_method": "UPI",
+        "payment_gateway": "Razorpay",
+        "gateway_order_id": "order_R7wRubscGDvUQG",
+        "gateway_payment_id": "pay_R7wSE3RGDVV5U5",
+        "gateway_signature": "1a683e6ebd4a05ab0b417687d1101744f601d263a1c11ee0968478924dd85f92",
+        "status": "paid",
+        "paid_at": "2025-08-21T15:23:07.831376",
+        "plan_start_date": "2025-09-10T15:22:21.897191",
+        "plan_end_date": "2025-09-30T15:22:21.897191",
+        "created_at": "2025-08-21T15:22:36.107233",
+        "metadata": {
+          "browser": "Unknown",
+          "location": "undefined, undefined",
+          "created_at": "2025-08-21T09:52:36.106Z",
+          "created_by": "user",
+          "ip_address": "127.0.0.1",
+          "user_agent": "PostmanRuntime/7.45.0",
+          "device_type": "Desktop",
+          "duration_days": 20
+        }
+      },
+      "plan_details": {
+        "id": 4,
+        "name": "Standard Plan",
+        "description": "Best for professionals who want a balance of features and affordability.",
+        "price": 199.99,
+        "duration_in_days": 20,
+        "features": [
+          "Custom QR code",
+          "vCard download",
+          "Basic analytics"
+        ],
+        "is_active": true,
+        "created_at": "2025-07-29T23:15:23.775024"
+      }
+    }
   ]
 }
+
 ```
 
 ---
 
 ## ✏️ Update User in admin
 
-### **PUT** `/api/admin/users/:id`
+### **PUT** `/api/admin/user/:id`
 
 Update details of a specific user.
 
@@ -197,7 +255,7 @@ Update details of a specific user.
 
 ## ❌ Delete User
 
-### **DELETE** `/api/admin/users/:id`
+### **DELETE** `/api/admin/user/:id`
 
 Deletes a single user by ID.
 
@@ -221,7 +279,7 @@ Deletes a single user by ID.
 
 ## 🗑️ Mass Delete Users
 
-### **POST** `/api/admin/users`
+### **POST** `/api/admin/user`
 
 Deletes multiple users by IDs.
 
