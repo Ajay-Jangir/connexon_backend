@@ -232,7 +232,17 @@ exports.deletePhoneNumbers = async (userId, keepIds = []) => {
 
 exports.findUserByIdWithPhones = async (userId) => {
     const userRes = await pool.query(
-        `SELECT id, first_name, middle_name, last_name, email, dob, address, created_at, updated_at
+        `SELECT 
+            id, 
+            first_name, 
+            middle_name, 
+            last_name, 
+            email, 
+            dob, 
+            address, 
+            status,
+            created_at, 
+            updated_at
          FROM users
          WHERE id = $1`,
         [userId]
@@ -251,6 +261,7 @@ exports.findUserByIdWithPhones = async (userId) => {
         ...userRes.rows[0],
         phone_numbers: phoneRes.rows
     };
-}
+};
+
 
 
