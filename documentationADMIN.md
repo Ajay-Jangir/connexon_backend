@@ -221,7 +221,7 @@ Fetches a list of all registered users with their associated phone numbers.
 
 ## ✏️ Update User in admin
 
-### **PUT** `/api/admin/user/:id`
+### **PUT** `/api/admin/user/update/:id`
 
 Update details of a specific user.
 

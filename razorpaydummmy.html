@@ -10,7 +10,7 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
     const razorpayKey = "rzp_test_uQF2cc8k062609";  // ✅ Replace with your actual key
-    const order_id = "order_R7wRubscGDvUQG";        // ✅ Use actual Razorpay Order ID
+    const order_id = "order_R9tAx4GRV7xh3a";        // ✅ Use actual Razorpay Order ID
 
     const options = {
       key: razorpayKey,
@@ -23,7 +23,7 @@
         console.log("Payment Response:", response);
 
         // ✅ Send to your backend to verify
-        fetch("http://localhost:5000/api/payment/verify-payment", {
+        fetch("https://connexon-backend.onrender.com/api/payment/verify-payment", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"

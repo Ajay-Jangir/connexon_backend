@@ -213,6 +213,7 @@ exports.updateAnyUser = async (req, res) => {
             dob,
             address,
             phone_numbers,
+            status,
         } = req.body;
 
         const user = await userModel.findUserById(userId);
@@ -230,15 +231,15 @@ exports.updateAnyUser = async (req, res) => {
         }
 
         if (middle_name !== undefined) {
-            if (typeof middle_name !== 'string' || middle_name.trim() === '') {
-                return res.status(400).json({ path: 'middle_name', message: 'Middle name cannot be empty' });
+            if (typeof middle_name !== 'string') {
+                return res.status(400).json({ path: 'middle_name', message: 'Middle name must be a string' });
             }
             updatedFields.middle_name = middle_name.trim();
         }
 
         if (last_name !== undefined) {
-            if (typeof last_name !== 'string' || last_name.trim() === '') {
-                return res.status(400).json({ path: 'last_name', message: 'Last name cannot be empty' });
+            if (typeof last_name !== 'string') {
+                return res.status(400).json({ path: 'last_name', message: 'Last name must be a string' });
             }
             updatedFields.last_name = last_name.trim();
         }
@@ -263,12 +264,18 @@ exports.updateAnyUser = async (req, res) => {
         }
 
         if (address !== undefined) {
-            if (typeof address !== 'string' || address.trim() === '') {
-                return res.status(400).json({ path: 'address', message: 'Address must be a non-empty string' });
+            if (typeof address !== 'string') {
+                return res.status(400).json({ path: 'address', message: 'Address must be a string' });
             }
             updatedFields.address = address.trim();
         }
 
+        if (status !== undefined) {
+            if (!['active', 'blocked'].includes(status.toLowerCase())) {
+                return res.status(400).json({ path: 'status', message: 'Status must be either active or blocked' });
+            }
+            updatedFields.status = status.toLowerCase();
+        }
 
         // Handle phone numbers
         if (phone_numbers !== undefined) {
@@ -309,8 +316,6 @@ exports.updateAnyUser = async (req, res) => {
         return res.status(500).json({ path: 'server', message: 'Internal server error' });
     }
 };
-
-
 
 exports.deleteAnyUser = async (req, res) => {
     try {
