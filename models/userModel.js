@@ -108,7 +108,7 @@ exports.getAllUsers = async () => {
 
 
 exports.updateUserById = async (id, data) => {
-    const { first_name, middle_name, last_name, email, dob, address } = data;
+    const { first_name, middle_name, last_name, email, dob, address, status } = data;
     await pool.query(`
         UPDATE users SET
             first_name = COALESCE($1, first_name),
@@ -116,10 +116,12 @@ exports.updateUserById = async (id, data) => {
             last_name = COALESCE($3, last_name),
             email = COALESCE($4, email),
             dob = COALESCE($5, dob),
-            address = COALESCE($6, address)
-        WHERE id = $7
-    `, [first_name, middle_name, last_name, email, dob, address, id]);
+            address = COALESCE($6, address),
+            status = COALESCE($7, status)
+        WHERE id = $8
+    `, [first_name, middle_name, last_name, email, dob, address, status, id]);
 };
+
 
 exports.deleteUserById = async (id) => {
     await pool.query('DELETE FROM user_phone_numbers WHERE user_id = $1', [id]);
