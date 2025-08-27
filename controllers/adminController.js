@@ -223,30 +223,34 @@ exports.updateAnyUser = async (req, res) => {
 
         const updatedFields = {};
 
+        // First name - cannot be null
         if (first_name !== undefined) {
             if (typeof first_name !== 'string' || first_name.trim() === '') {
-                return res.status(400).json({ path: 'first_name', message: 'First name cannot be empty' });
+                return res.status(400).json({ path: 'first_name', message: 'First name cannot be empty or null' });
             }
             updatedFields.first_name = first_name.trim();
         }
 
+        // Middle name - can be null
         if (middle_name !== undefined) {
-            if (typeof middle_name !== 'string') {
-                return res.status(400).json({ path: 'middle_name', message: 'Middle name must be a string' });
+            if (middle_name !== null && typeof middle_name !== 'string') {
+                return res.status(400).json({ path: 'middle_name', message: 'Middle name must be a string or null' });
             }
-            updatedFields.middle_name = middle_name.trim();
+            updatedFields.middle_name = middle_name === null ? null : middle_name.trim();
         }
 
+        // Last name - can be null
         if (last_name !== undefined) {
-            if (typeof last_name !== 'string') {
-                return res.status(400).json({ path: 'last_name', message: 'Last name must be a string' });
+            if (last_name !== null && typeof last_name !== 'string') {
+                return res.status(400).json({ path: 'last_name', message: 'Last name must be a string or null' });
             }
-            updatedFields.last_name = last_name.trim();
+            updatedFields.last_name = last_name === null ? null : last_name.trim();
         }
 
+        // Email - cannot be null
         if (email !== undefined) {
             if (typeof email !== 'string' || !validator.isEmail(email)) {
-                return res.status(400).json({ path: 'email', message: 'Invalid email format' });
+                return res.status(400).json({ path: 'email', message: 'Invalid email format or empty' });
             }
             const existingEmailUser = await userModel.findUserByEmail(email.toLowerCase());
             if (existingEmailUser && existingEmailUser.id !== userId) {
@@ -255,21 +259,28 @@ exports.updateAnyUser = async (req, res) => {
             updatedFields.email = email.toLowerCase();
         }
 
+        // Date of birth - can be null
         if (dob !== undefined) {
-            const date = new Date(dob);
-            if (isNaN(date.getTime())) {
-                return res.status(400).json({ path: 'dob', message: 'Invalid date format (use YYYY-MM-DD)' });
+            if (dob !== null) {
+                const date = new Date(dob);
+                if (isNaN(date.getTime())) {
+                    return res.status(400).json({ path: 'dob', message: 'Invalid date format (use YYYY-MM-DD)' });
+                }
+                updatedFields.dob = dob;
+            } else {
+                updatedFields.dob = null;
             }
-            updatedFields.dob = dob;
         }
 
+        // Address - can be null
         if (address !== undefined) {
-            if (typeof address !== 'string') {
-                return res.status(400).json({ path: 'address', message: 'Address must be a string' });
+            if (address !== null && typeof address !== 'string') {
+                return res.status(400).json({ path: 'address', message: 'Address must be a string or null' });
             }
-            updatedFields.address = address.trim();
+            updatedFields.address = address === null ? null : address.trim();
         }
 
+        // Status - keep original validation
         if (status !== undefined) {
             if (!['active', 'blocked'].includes(status.toLowerCase())) {
                 return res.status(400).json({ path: 'status', message: 'Status must be either active or blocked' });
@@ -277,10 +288,13 @@ exports.updateAnyUser = async (req, res) => {
             updatedFields.status = status.toLowerCase();
         }
 
-        // Handle phone numbers
+        // Phone numbers - cannot be null
         if (phone_numbers !== undefined) {
             if (!Array.isArray(phone_numbers)) {
                 return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers must be an array' });
+            }
+            if (phone_numbers.length === 0) {
+                return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers cannot be empty' });
             }
             for (const num of phone_numbers) {
                 if (!num.phone_number || typeof num.phone_number !== 'string') {
@@ -316,6 +330,7 @@ exports.updateAnyUser = async (req, res) => {
         return res.status(500).json({ path: 'server', message: 'Internal server error' });
     }
 };
+
 
 exports.deleteAnyUser = async (req, res) => {
     try {
