@@ -107,16 +107,16 @@ exports.getActiveQRCodeByUserId = async (user_id) => {
 };
 
 
-exports.disableQRCodesByAdmin = async (user_id, status) => {
+exports.disableQRCodesByAdmin = async (user_id) => {
     const result = await pool.query(
         `UPDATE qr_codes
-         SET qr_disabled_by_admin = $2,
-             is_active = NOT $2  -- if disabled = true, active = false; if disabled = false, active = true
+         SET qr_disabled_by_admin = NOT qr_disabled_by_admin
          WHERE user_id = $1
          RETURNING *`,
-        [user_id, status]
+        [user_id]
     );
     return result.rows;
 };
+
 
 

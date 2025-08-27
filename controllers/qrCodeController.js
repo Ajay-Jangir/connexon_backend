@@ -200,16 +200,17 @@ exports.getQRCodeByUser = async (req, res) => {
 
 
 // 📌 Deactivate QR Code
-// controller
+
 exports.toggleAllQRCodesByAdmin = async (req, res) => {
     try {
         const qrId = req.params.id;
-        const { status } = req.body; // expecting true or false
+        const { qr_disabled_by_admin } = req.body; // use the real column name
 
-        if (typeof status !== 'boolean') {
+        // Validate
+        if (typeof qr_disabled_by_admin !== 'boolean') {
             return res.status(400).json({
-                path: 'status',
-                message: 'Status must be a boolean (true or false)',
+                path: 'qr_disabled_by_admin',
+                message: 'qr_disabled_by_admin must be a boolean (true or false)',
             });
         }
 
@@ -219,13 +220,13 @@ exports.toggleAllQRCodesByAdmin = async (req, res) => {
             return res.status(404).json({ message: 'QR code not found' });
         }
 
-        // Toggle all QR codes for this user
-        const updatedQRs = await qrCodeModel.disableQRCodesByAdmin(qrCode.user_id, status);
+        // Update all QR codes for this user
+        const updatedQRs = await qrCodeModel.disableQRCodesByAdmin(qrCode.user_id, qr_disabled_by_admin);
 
         if (!updatedQRs || updatedQRs.length === 0) {
             return res.status(200).json({
                 status: 'success',
-                message: status
+                message: qr_disabled_by_admin
                     ? 'No active QR codes were found for this user to deactivate'
                     : 'No QR codes were found for this user to reactivate',
                 data: [],
@@ -234,7 +235,7 @@ exports.toggleAllQRCodesByAdmin = async (req, res) => {
 
         res.status(200).json({
             status: 'success',
-            message: status
+            message: qr_disabled_by_admin
                 ? 'All QR codes for the user deactivated by admin successfully'
                 : 'All QR codes for the user reactivated by admin successfully',
             data: updatedQRs,
