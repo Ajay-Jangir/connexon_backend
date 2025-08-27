@@ -214,7 +214,7 @@ exports.toggleAllQRCodesByAdmin = async (req, res) => {
         }
 
         // Update all QR codes for this user
-        const updatedQRs = await qrCodeModel.disableQRCodesByAdmin(qrCode.user_id, qr_disabled_by_admin);
+        const updatedQRs = await qrCodeModel.disableQRCodesByAdmin(userId, qr_disabled_by_admin);
 
         if (!updatedQRs || updatedQRs.length === 0) {
             return res.status(200).json({
