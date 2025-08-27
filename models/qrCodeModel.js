@@ -106,28 +106,17 @@ exports.getActiveQRCodeByUserId = async (user_id) => {
     return result.rows[0] || null;
 };
 
-// Deactivate single QR code
-// exports.deactivateQRCode = async (id) => {
-//     const result = await pool.query(
-//         `UPDATE qr_codes 
-//          SET is_active = FALSE 
-//          WHERE id = $1 
-//          RETURNING *`,
-//         [id]
-//     );
-//     return result.rows[0] || null;
-// };
 
-// === Admin Controls ===
-// Disable a user's current active QR code (admin action)
-exports.disableAllQRCodesByAdmin = async (user_id) => {
+exports.disableQRCodesByAdmin = async (user_id, status) => {
     const result = await pool.query(
         `UPDATE qr_codes
-         SET qr_disabled_by_admin = TRUE, is_active = FALSE
-         WHERE user_id = $1 AND is_active = TRUE
+         SET qr_disabled_by_admin = $2,
+             is_active = NOT $2  -- if disabled = true, active = false; if disabled = false, active = true
+         WHERE user_id = $1
          RETURNING *`,
-        [user_id]
+        [user_id, status]
     );
     return result.rows;
 };
+
 

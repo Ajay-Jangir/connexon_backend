@@ -31,6 +31,6 @@ router.post('/webhook', express.json({ verify: (req, res, buf) => { req.rawBody 
 
 // Admin controlling QR Codes - only admin
 router.get('/qr-codes/user/:user_id', authMiddleware, adminMiddleware, qrCodeController.getQRCodeByUser);
-router.patch('/qr-codes/deactivate/:id', authMiddleware, adminMiddleware, qrCodeController.deactivateAllQRCode);
+router.put('/qr-codes/deactivate/:id', authMiddleware, adminMiddleware, qrCodeController.toggleAllQRCodesByAdmin);
 
 module.exports = router;

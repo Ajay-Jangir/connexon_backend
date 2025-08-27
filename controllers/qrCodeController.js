@@ -200,9 +200,18 @@ exports.getQRCodeByUser = async (req, res) => {
 
 
 // 📌 Deactivate QR Code
-exports.deactivateAllQRCode = async (req, res) => {
+// controller
+exports.toggleAllQRCodesByAdmin = async (req, res) => {
     try {
         const qrId = req.params.id;
+        const { status } = req.body; // expecting true or false
+
+        if (typeof status !== 'boolean') {
+            return res.status(400).json({
+                path: 'status',
+                message: 'Status must be a boolean (true or false)',
+            });
+        }
 
         // Get the QR code by ID to find the associated user
         const qrCode = await qrCodeModel.getQRCodeById(qrId);
@@ -210,21 +219,25 @@ exports.deactivateAllQRCode = async (req, res) => {
             return res.status(404).json({ message: 'QR code not found' });
         }
 
-        // Disable all active QR codes for this user
-        const updatedQRs = await qrCodeModel.disableAllQRCodesByAdmin(qrCode.user_id);
+        // Toggle all QR codes for this user
+        const updatedQRs = await qrCodeModel.disableQRCodesByAdmin(qrCode.user_id, status);
 
         if (!updatedQRs || updatedQRs.length === 0) {
             return res.status(200).json({
                 status: 'success',
-                message: 'No active QR codes were found for this user to deactivate',
-                data: []
+                message: status
+                    ? 'No active QR codes were found for this user to deactivate'
+                    : 'No QR codes were found for this user to reactivate',
+                data: [],
             });
         }
 
         res.status(200).json({
             status: 'success',
-            message: 'All active QR codes for the user deactivated by admin successfully',
-            data: updatedQRs
+            message: status
+                ? 'All QR codes for the user deactivated by admin successfully'
+                : 'All QR codes for the user reactivated by admin successfully',
+            data: updatedQRs,
         });
 
     } catch (err) {
@@ -232,6 +245,7 @@ exports.deactivateAllQRCode = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 
