@@ -121,15 +121,15 @@ exports.createQRCode = async (req, res) => {
         // ✅ Generate QR Code (Base64 Data URL)
         const qrDataUrl = await QRCode.toDataURL(vcardText, { errorCorrectionLevel: 'H' });
 
-        // 🔁 Deactivate old QR codes
-        await qrCodeModel.deactivateAllQRCodesForUser(user_id);
-
         // 💾 Save new QR code
         await qrCodeModel.insertQRCode({
             user_id,
             qr_code_data: qrDataUrl,
             vcard: vcardText
         });
+
+        // 🔁 Delete old QR codes AFTER successful insertion
+        await qrCodeModel.deleteOldQRCodes(user_id, newQRCode.id);
 
         return res.status(201).json({
             status: 'success',
@@ -200,11 +200,10 @@ exports.getQRCodeByUser = async (req, res) => {
 
 
 // 📌 Deactivate QR Code
-
 exports.toggleAllQRCodesByAdmin = async (req, res) => {
     try {
         const userId = req.params.id;
-        const { qr_disabled_by_admin } = req.body; // use the real column name
+        const { qr_disabled_by_admin } = req.body;
 
         // Validate
         if (typeof qr_disabled_by_admin !== 'boolean') {
@@ -215,7 +214,7 @@ exports.toggleAllQRCodesByAdmin = async (req, res) => {
         }
 
         // Get the QR code by ID to find the associated user
-        const qrCode = await qrCodeModel.getQRCodeByUser(userId);
+        const qrCode = await qrCodeModel.getActiveQRCodeByUserId(userId);
         if (!qrCode) {
             return res.status(404).json({ message: 'QR code not found' });
         }

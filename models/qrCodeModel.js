@@ -93,6 +93,16 @@ exports.deactivateAllQRCodesForUser = async (user_id) => {
     );
 };
 
+// Deletes all QR codes for a user except the new one
+exports.deleteOldQRCodes = async (user_id, excludeQrId) => {
+    await pool.query(
+        `DELETE FROM qr_codes
+         WHERE user_id = $1 AND id != $2`,
+        [user_id, excludeQrId]
+    );
+};
+
+
 // Get latest active QR code
 exports.getActiveQRCodeByUserId = async (user_id) => {
     const result = await pool.query(
