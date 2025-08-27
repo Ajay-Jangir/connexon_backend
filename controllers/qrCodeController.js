@@ -213,12 +213,6 @@ exports.toggleAllQRCodesByAdmin = async (req, res) => {
             });
         }
 
-        // Get the QR code by ID to find the associated user
-        const qrCode = await qrCodeModel.getActiveQRCodeByUserId(userId);
-        if (!qrCode) {
-            return res.status(404).json({ message: 'QR code not found' });
-        }
-
         // Update all QR codes for this user
         const updatedQRs = await qrCodeModel.disableQRCodesByAdmin(qrCode.user_id, qr_disabled_by_admin);
 
