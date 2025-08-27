@@ -203,7 +203,7 @@ exports.getQRCodeByUser = async (req, res) => {
 
 exports.toggleAllQRCodesByAdmin = async (req, res) => {
     try {
-        const qrId = req.params.id;
+        const userId = req.params.id;
         const { qr_disabled_by_admin } = req.body; // use the real column name
 
         // Validate
@@ -215,7 +215,7 @@ exports.toggleAllQRCodesByAdmin = async (req, res) => {
         }
 
         // Get the QR code by ID to find the associated user
-        const qrCode = await qrCodeModel.getQRCodeById(qrId);
+        const qrCode = await qrCodeModel.getQRCodeByUser(userId);
         if (!qrCode) {
             return res.status(404).json({ message: 'QR code not found' });
         }
