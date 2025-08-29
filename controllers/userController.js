@@ -217,13 +217,9 @@ exports.updateUser = async (req, res) => {
             }
         }
 
-        // ✅ Handle phone numbers (insert/update/delete)
+        // ✅ Handle phone numbers (insert/update/delete specific only)
         if (phone_numbers !== undefined) {
             await userModel.upsertUserPhoneNumbers(userId, phone_numbers);
-
-            const keepIds = phone_numbers.filter(num => num.id).map(num => num.id);
-
-            await userModel.deletePhoneNumbers(userId, keepIds);
         }
 
         // ✅ Prevent empty update
@@ -250,6 +246,7 @@ exports.updateUser = async (req, res) => {
         });
     }
 };
+
 
 
 exports.getMyProfile = async (req, res) => {

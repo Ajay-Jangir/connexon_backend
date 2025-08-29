@@ -193,19 +193,31 @@ exports.getUserById = async (user_id) => {
 };
 
 
+// ✅ Upsert phone numbers with add, edit, delete specific only
 exports.upsertUserPhoneNumbers = async (userId, phoneNumbers = []) => {
     for (const { id, country_code, phone_number } of phoneNumbers) {
         if (id) {
-            // Update existing phone number
-            await pool.query(
-                `UPDATE user_phone_numbers
-                 SET country_code = COALESCE($1, country_code),
-                     phone_number = COALESCE($2, phone_number)
-                 WHERE id = $3 AND user_id = $4`,
-                [country_code || '+91', phone_number, id, userId]
-            );
+            if (!phone_number) {
+                // Delete only this specific number if empty/null
+                await pool.query(
+                    `DELETE FROM user_phone_numbers WHERE id = $1 AND user_id = $2`,
+                    [id, userId]
+                );
+            } else {
+                // Update existing number
+                await pool.query(
+                    `UPDATE user_phone_numbers
+                     SET country_code = COALESCE($1, country_code),
+                         phone_number = COALESCE($2, phone_number)
+                     WHERE id = $3 AND user_id = $4`,
+                    [country_code || '+91', phone_number, id, userId]
+                );
+            }
         } else {
-            // Insert new phone number
+            if (!phone_number) {
+                throw new Error("⚠️ Please enter a valid phone number.");
+            }
+            // Insert new number
             await pool.query(
                 `INSERT INTO user_phone_numbers (user_id, country_code, phone_number)
                  VALUES ($1, $2, $3)`,
@@ -215,20 +227,15 @@ exports.upsertUserPhoneNumbers = async (userId, phoneNumbers = []) => {
     }
 };
 
-exports.deletePhoneNumbers = async (userId, keepIds = []) => {
-    if (keepIds.length === 0) {
-        // If no ids are sent, delete all numbers for this user
-        await pool.query(
-            `DELETE FROM user_phone_numbers WHERE user_id = $1`,
-            [userId]
-        );
-    } else {
-        await pool.query(
-            `DELETE FROM user_phone_numbers
-             WHERE user_id = $1 AND id NOT IN (${keepIds.map((_, i) => `$${i + 2}`).join(',')})`,
-            [userId, ...keepIds]
-        );
-    }
+
+exports.deletePhoneNumbers = async (userId, idsToDelete = []) => {
+    if (idsToDelete.length === 0) return; // nothing to delete
+
+    await pool.query(
+        `DELETE FROM user_phone_numbers
+         WHERE user_id = $1 AND id = ANY($2::int[])`,
+        [userId, idsToDelete]
+    );
 };
 
 
