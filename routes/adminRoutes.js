@@ -6,13 +6,14 @@ const adminMiddleware = require('../middleware/adminMiddleware');
 const membershipController = require('../controllers/membershipController');
 const paymentController = require('../controllers/paymentController');
 const qrCodeController = require('../controllers/qrCodeController');
+const userController = require('../controllers/userController');
 
 // Public routes for admin auth
 router.post('/register', adminController.registerAdmin);
 router.post('/login', adminController.loginAdmin);
 
 // Admin controlling users - only admin can access
-router.post('/user/create', authMiddleware, adminMiddleware, adminController.createUser);
+router.post('/user/create', authMiddleware, adminMiddleware, userController.registerUser);
 router.get('/user', authMiddleware, adminMiddleware, adminController.getAllUsers);
 router.put('/user/update/:id', authMiddleware, adminMiddleware, adminController.updateAnyUser);
 router.delete('/user/delete/:id', authMiddleware, adminMiddleware, adminController.deleteAnyUser);

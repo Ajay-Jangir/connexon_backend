@@ -72,118 +72,6 @@ exports.loginAdmin = async (req, res) => {
     }
 };
 
-exports.createUser = async (req, res) => {
-    try {
-        const {
-            first_name,
-            middle_name,
-            last_name,
-            email,
-            dob,
-            address,
-            password,
-            phone_numbers
-        } = req.body;
-
-        const newUserFields = {};
-
-        // ----- Field Validations -----
-        // First Name (required)
-        if (!first_name || typeof first_name !== 'string' || first_name.trim() === '') {
-            return res.status(400).json({ path: 'first_name', message: 'First name is required and cannot be empty' });
-        }
-        newUserFields.first_name = first_name.trim();
-
-        // Middle Name (optional)
-        if (middle_name !== undefined && middle_name !== null) {
-            if (typeof middle_name !== 'string') {
-                return res.status(400).json({ path: 'middle_name', message: 'Middle name must be a string' });
-            }
-            newUserFields.middle_name = middle_name.trim();
-        }
-
-        // Last Name (optional)
-        if (last_name !== undefined && last_name !== null && last_name !== '') {
-            if (typeof last_name !== 'string') {
-                return res.status(400).json({ path: 'last_name', message: 'Last name must be a string' });
-            }
-            newUserFields.last_name = last_name.trim();
-        }
-
-        // Email (required)
-        if (!email || typeof email !== 'string' || !validator.isEmail(email)) {
-            return res.status(400).json({ path: 'email', message: 'Valid email is required' });
-        }
-        const existingEmailUser = await userModel.findUserByEmail(email.toLowerCase());
-        if (existingEmailUser) {
-            return res.status(409).json({ path: 'email', message: 'Email already in use' });
-        }
-        newUserFields.email = email.toLowerCase();
-
-        // Password (required)
-        if (!password || typeof password !== 'string' || password.length < 6) {
-            return res.status(400).json({ path: 'password', message: 'Password is required and must be at least 6 characters' });
-        }
-        const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
-        newUserFields.password_hash = await bcrypt.hash(password, saltRounds);
-
-        // Date of Birth (optional)
-        if (dob !== undefined && dob !== null && dob !== '') {
-            const date = new Date(dob);
-            if (isNaN(date.getTime())) {
-                return res.status(400).json({ path: 'dob', message: 'Invalid date format (use YYYY-MM-DD)' });
-            }
-            newUserFields.dob = dob; // store as provided
-        }
-
-        // Address (optional)
-        if (address !== undefined && address !== null && address !== '') {
-            if (typeof address !== 'string' || address.trim() === '') {
-                return res.status(400).json({ path: 'address', message: 'Address must be a non-empty string' });
-            }
-            newUserFields.address = address.trim();
-        }
-
-        // ----- Insert User -----
-        const insertedUser = await userModel.insertUser(newUserFields);
-
-        // ----- Handle Phone Numbers -----
-        // ----- Handle Phone Numbers (required) -----
-        if (!phone_numbers || !Array.isArray(phone_numbers) || phone_numbers.length === 0) {
-            return res.status(400).json({ path: 'phone_numbers', message: 'At least one phone number is required' });
-        }
-
-        for (const num of phone_numbers) {
-            if (!num.phone_number || typeof num.phone_number !== 'string' || num.phone_number.trim() === '') {
-                return res.status(400).json({ path: 'phone_number', message: 'Each phone_number must be a non-empty string' });
-            }
-            if (num.country_code && typeof num.country_code !== 'string') {
-                return res.status(400).json({ path: 'country_code', message: 'Country code must be a string' });
-            }
-        }
-
-        // Insert phone numbers
-        for (const num of phone_numbers) {
-            await userModel.insertPhoneNumber(insertedUser.id, num.country_code || '+91', num.phone_number.trim());
-        }
-
-
-        const newUser = await userModel.findUserByIdWithPhones(insertedUser.id);
-
-        return res.status(201).json({
-            status: 'success',
-            message: 'User created successfully by admin',
-            data: newUser
-        });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ path: 'server', message: 'Internal server error' });
-    }
-};
-
-
-
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await userModel.getAllUsers();
@@ -290,40 +178,51 @@ exports.updateAnyUser = async (req, res) => {
         }
 
 
-        // ✅ Validate phone_numbers
         if (phone_numbers !== undefined) {
             if (!Array.isArray(phone_numbers)) {
                 return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers must be an array' });
             }
 
             for (const num of phone_numbers) {
+                // Skip empty numbers with ID (they will be deleted)
                 if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
-                    // skip validation here because it's a delete request
+                    await userModel.deletePhoneNumbers(userId, [num.id]);
                     continue;
                 }
-                if (!num.phone_number || typeof num.phone_number !== 'string') {
-                    return res.status(400).json({ path: 'phone_number', message: 'Each phone_number must be a non-empty string' });
+
+                // Type checks
+                if (typeof num.phone_number !== 'string') {
+                    return res.status(400).json({ path: 'phone_number', message: 'Phone number must be a string' });
                 }
-                if (num.country_code && typeof num.country_code !== 'string') {
+                if (typeof num.country_code !== 'string') {
                     return res.status(400).json({ path: 'country_code', message: 'Country code must be a string' });
                 }
-                if (num.id && typeof num.id !== 'number') {
+                if (num.id !== undefined && typeof num.id !== 'number') {
                     return res.status(400).json({ path: 'id', message: 'Phone number id must be a number if provided' });
                 }
+
+                // Presence & format
+                if (!num.phone_number.trim() || !num.country_code.trim()) {
+                    return res.status(400).json({ path: 'phone_numbers', message: 'Phone number and country code required' });
+                }
+                if (!isValidPhoneNumber(num.phone_number)) {
+                    return res.status(400).json({ path: 'phone_number', message: 'Invalid phone number format' });
+                }
+                if (!/^\+\d{1,4}$/.test(num.country_code)) {
+                    return res.status(400).json({ path: 'country_code', message: 'Invalid country code format' });
+                }
+
+                // Duplicate check
+                const isRegistered = await userModel.isPhoneNumberRegistered(num.country_code, num.phone_number);
+                if (isRegistered && (!num.id || (num.id && num.id !== isRegistered.id))) {
+                    return res.status(409).json({ path: 'phone_number', message: 'Phone number already registered' });
+                }
+
+                // Insert/update
+                await userModel.upsertUserPhoneNumbers(userId, [num]);
             }
         }
 
-        // ✅ Handle phone numbers (insert/update/delete specific only)
-        if (phone_numbers !== undefined) {
-            for (const num of phone_numbers) {
-                if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
-                    await userModel.deletePhoneNumbers(userId, [num.id]);
-                } else {
-                    // insert/update
-                    await userModel.upsertUserPhoneNumbers(userId, num);
-                }
-            }
-        }
 
         // ✅ Prevent empty update
         if (Object.keys(updatedFields).length === 0 && phone_numbers === undefined) {
