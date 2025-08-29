@@ -13,15 +13,18 @@ exports.findUserByEmail = async (email) => {
     return rows[0];
 };
 
-exports.isPhoneNumberRegistered = async (phone_number) => {
-    if (!phone_number) return false;
+exports.isPhoneNumberRegistered = async (country_code, phone_number) => {
+    if (!phone_number || !country_code) return false;
 
     const { rows } = await pool.query(
-        `SELECT 1 FROM user_phone_numbers WHERE phone_number = $1 LIMIT 1`,
-        [phone_number]
+        `SELECT 1 FROM user_phone_numbers 
+         WHERE phone_number = $1 AND country_code = $2 LIMIT 1`,
+        [phone_number, country_code]
     );
+
     return rows.length > 0;
 };
+
 
 
 exports.insertUser = async (user) => {

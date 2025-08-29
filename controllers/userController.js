@@ -54,9 +54,9 @@ exports.registerUser = async (req, res) => {
                 return res.status(400).json({ path: 'country_code', message: `Invalid country code: ${country_code}` });
             }
 
-            const phoneExists = await userModel.isPhoneNumberRegistered(phone_number);
-            if (phoneExists) {
-                return res.status(409).json({ path: 'phone_number', message: `Phone number already registered: ${phone_number}` });
+            const isRegistered = await userModel.isPhoneNumberRegistered(num.country_code, num.phone_number);
+            if (isRegistered) {
+                return res.status(409).json({ path: 'phone_number', message: 'Phone number already registered' });
             }
         }
 
@@ -227,7 +227,7 @@ exports.updateUser = async (req, res) => {
                     return res.status(400).json({ path: 'country_code', message: 'Invalid country code format' });
                 }
 
-                const isRegistered = await userModel.isPhoneNumberRegistered(num.phone_number);
+                const isRegistered = await userModel.isPhoneNumberRegistered(num.country_code, num.phone_number);
                 if (isRegistered) {
                     return res.status(409).json({ path: 'phone_number', message: 'Phone number already registered' });
                 }
