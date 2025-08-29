@@ -148,24 +148,25 @@ exports.createUser = async (req, res) => {
         const insertedUser = await userModel.insertUser(newUserFields);
 
         // ----- Handle Phone Numbers -----
-        if (phone_numbers !== undefined) {
-            if (!Array.isArray(phone_numbers)) {
-                return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers must be an array' });
-            }
+        // ----- Handle Phone Numbers (required) -----
+        if (!phone_numbers || !Array.isArray(phone_numbers) || phone_numbers.length === 0) {
+            return res.status(400).json({ path: 'phone_numbers', message: 'At least one phone number is required' });
+        }
 
-            for (const num of phone_numbers) {
-                if (!num.phone_number || typeof num.phone_number !== 'string') {
-                    return res.status(400).json({ path: 'phone_number', message: 'Each phone_number must be a non-empty string' });
-                }
-                if (num.country_code && typeof num.country_code !== 'string') {
-                    return res.status(400).json({ path: 'country_code', message: 'Country code must be a string' });
-                }
+        for (const num of phone_numbers) {
+            if (!num.phone_number || typeof num.phone_number !== 'string' || num.phone_number.trim() === '') {
+                return res.status(400).json({ path: 'phone_number', message: 'Each phone_number must be a non-empty string' });
             }
-
-            for (const num of phone_numbers) {
-                await userModel.insertPhoneNumber(insertedUser.id, num.country_code || '+91', num.phone_number);
+            if (num.country_code && typeof num.country_code !== 'string') {
+                return res.status(400).json({ path: 'country_code', message: 'Country code must be a string' });
             }
         }
+
+        // Insert phone numbers
+        for (const num of phone_numbers) {
+            await userModel.insertPhoneNumber(insertedUser.id, num.country_code || '+91', num.phone_number.trim());
+        }
+
 
         const newUser = await userModel.findUserByIdWithPhones(insertedUser.id);
 
