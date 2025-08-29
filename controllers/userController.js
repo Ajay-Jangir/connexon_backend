@@ -42,23 +42,34 @@ exports.registerUser = async (req, res) => {
 
         // Validate all phone numbers
         for (const { phone_number, country_code } of phone_numbers) {
-            if (!phone_number || !country_code) {
+            // Type checks first
+            if (typeof phone_number !== 'string') {
+                return res.status(400).json({ path: 'phone_number', message: 'Phone number must be a string' });
+            }
+            if (typeof country_code !== 'string') {
+                return res.status(400).json({ path: 'country_code', message: 'Country code must be a string' });
+            }
+
+            // Presence check
+            if (!phone_number.trim() || !country_code.trim()) {
                 return res.status(400).json({ path: 'phone_numbers', message: 'Phone number and country code required' });
             }
 
+            // Format checks
             if (!isValidPhoneNumber(phone_number)) {
                 return res.status(400).json({ path: 'phone_number', message: `Invalid phone number: ${phone_number}` });
             }
-
             if (!/^\+\d{1,4}$/.test(country_code)) {
                 return res.status(400).json({ path: 'country_code', message: `Invalid country code: ${country_code}` });
             }
 
-            const isRegistered = await userModel.isPhoneNumberRegistered(num.country_code, num.phone_number);
+            // Uniqueness check
+            const isRegistered = await userModel.isPhoneNumberRegistered(country_code, phone_number);
             if (isRegistered) {
                 return res.status(409).json({ path: 'phone_number', message: 'Phone number already registered' });
             }
         }
+
 
         // Hash password
         const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
@@ -198,54 +209,52 @@ exports.updateUser = async (req, res) => {
             updatedFields.address = address.trim();
         }
 
-        // ✅ Validate phone_numbers
+
         if (phone_numbers !== undefined) {
             if (!Array.isArray(phone_numbers)) {
                 return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers must be an array' });
             }
 
             for (const num of phone_numbers) {
+                // Skip empty numbers with ID (they will be deleted)
                 if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
+                    await userModel.deletePhoneNumbers(userId, [num.id]);
                     continue;
                 }
-                if (!num.phone_number || typeof num.phone_number !== 'string') {
-                    return res.status(400).json({ path: 'phone_number', message: 'Each phone_number must be a non-empty string' });
+
+                // Type checks
+                if (typeof num.phone_number !== 'string') {
+                    return res.status(400).json({ path: 'phone_number', message: 'Phone number must be a string' });
                 }
-                if (num.country_code && typeof num.country_code !== 'string') {
+                if (typeof num.country_code !== 'string') {
                     return res.status(400).json({ path: 'country_code', message: 'Country code must be a string' });
                 }
-                if (num.id && typeof num.id !== 'number') {
+                if (num.id !== undefined && typeof num.id !== 'number') {
                     return res.status(400).json({ path: 'id', message: 'Phone number id must be a number if provided' });
                 }
 
-                // Format check using your function
+                // Presence & format
+                if (!num.phone_number.trim() || !num.country_code.trim()) {
+                    return res.status(400).json({ path: 'phone_numbers', message: 'Phone number and country code required' });
+                }
                 if (!isValidPhoneNumber(num.phone_number)) {
                     return res.status(400).json({ path: 'phone_number', message: 'Invalid phone number format' });
                 }
-
                 if (!/^\+\d{1,4}$/.test(num.country_code)) {
                     return res.status(400).json({ path: 'country_code', message: 'Invalid country code format' });
                 }
 
+                // Duplicate check
                 const isRegistered = await userModel.isPhoneNumberRegistered(num.country_code, num.phone_number);
-                if (isRegistered) {
+                if (isRegistered && (!num.id || (num.id && num.id !== isRegistered.id))) {
                     return res.status(409).json({ path: 'phone_number', message: 'Phone number already registered' });
                 }
+
+                // Insert/update
+                await userModel.upsertUserPhoneNumbers(userId, [num]);
             }
         }
 
-        // ✅ Handle phone numbers (insert/update/delete specific only)
-        if (phone_numbers !== undefined) {
-            for (const num of phone_numbers) {
-                if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
-                    // explicit delete
-                    await userModel.deletePhoneNumbers(userId, [num.id]);
-                } else {
-                    // insert/update
-                    await userModel.upsertUserPhoneNumbers(userId, [num]);
-                }
-            }
-        }
 
         // ✅ Prevent empty update
         if (Object.keys(updatedFields).length === 0 && phone_numbers === undefined) {
