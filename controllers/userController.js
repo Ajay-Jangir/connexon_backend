@@ -229,7 +229,7 @@ exports.updateUser = async (req, res) => {
                     await userModel.deletePhoneNumbers(userId, [num.id]);
                 } else {
                     // insert/update
-                    await userModel.upsertUserPhoneNumber(userId, num);
+                    await userModel.upsertUserPhoneNumbers(userId, [num]);
                 }
             }
         }
