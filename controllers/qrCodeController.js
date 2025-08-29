@@ -231,7 +231,6 @@ exports.toggleAllQRCodesByAdmin = async (req, res) => {
             message: qr_disabled_by_admin
                 ? 'All QR codes for the user deactivated by admin successfully'
                 : 'All QR codes for the user reactivated by admin successfully',
-            data: updatedQRs,
         });
 
     } catch (err) {
