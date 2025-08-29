@@ -206,7 +206,6 @@ exports.updateUser = async (req, res) => {
 
             for (const num of phone_numbers) {
                 if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
-                    // skip validation here because it's a delete request
                     continue;
                 }
                 if (!num.phone_number || typeof num.phone_number !== 'string') {
@@ -217,6 +216,20 @@ exports.updateUser = async (req, res) => {
                 }
                 if (num.id && typeof num.id !== 'number') {
                     return res.status(400).json({ path: 'id', message: 'Phone number id must be a number if provided' });
+                }
+
+                // Format check using your function
+                if (!isValidPhoneNumber(num.phone_number)) {
+                    return res.status(400).json({ path: 'phone_number', message: 'Invalid phone number format' });
+                }
+
+                if (!/^\+\d{1,4}$/.test(num.country_code)) {
+                    return res.status(400).json({ path: 'country_code', message: 'Invalid country code format' });
+                }
+
+                const isRegistered = await userModel.isPhoneNumberRegistered(num.phone_number);
+                if (isRegistered && (!num.id || (num.id && num.id !== isRegistered.id))) {
+                    return res.status(409).json({ path: 'phone_number', message: 'Phone number already registered' });
                 }
             }
         }

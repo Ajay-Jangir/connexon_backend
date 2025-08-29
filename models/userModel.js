@@ -14,14 +14,14 @@ exports.findUserByEmail = async (email) => {
 };
 
 exports.isPhoneNumberRegistered = async (phone_number) => {
-    if (!phone_number) return false;
+    if (!phone_number) return null;
 
     const { rows } = await pool.query(
-        `SELECT 1 FROM user_phone_numbers WHERE phone_number = $1 LIMIT 1`,
+        `SELECT id FROM user_phone_numbers WHERE phone_number = $1 LIMIT 1`,
         [phone_number]
     );
 
-    return rows.length > 0;
+    return rows[0] || null;
 };
 
 
@@ -196,27 +196,20 @@ exports.getUserById = async (user_id) => {
 // ✅ Upsert phone numbers with add, edit, delete specific only
 exports.upsertUserPhoneNumbers = async (userId, phoneNumbers = []) => {
     for (const { id, country_code, phone_number } of phoneNumbers) {
+        if (!phone_number || typeof phone_number !== 'string' || phone_number.trim() === '') {
+            throw new Error("⚠️ Please enter a valid phone number.");
+        }
+
         if (id) {
-            if (!phone_number) {
-                // Delete only this specific number if empty/null
-                await pool.query(
-                    `DELETE FROM user_phone_numbers WHERE id = $1 AND user_id = $2`,
-                    [id, userId]
-                );
-            } else {
-                // Update existing number
-                await pool.query(
-                    `UPDATE user_phone_numbers
-                     SET country_code = COALESCE($1, country_code),
-                         phone_number = COALESCE($2, phone_number)
-                     WHERE id = $3 AND user_id = $4`,
-                    [country_code || '+91', phone_number, id, userId]
-                );
-            }
+            // Update existing number
+            await pool.query(
+                `UPDATE user_phone_numbers
+                 SET country_code = COALESCE($1, country_code),
+                     phone_number = $2
+                 WHERE id = $3 AND user_id = $4`,
+                [country_code || '+91', phone_number, id, userId]
+            );
         } else {
-            if (!phone_number) {
-                throw new Error("⚠️ Please enter a valid phone number.");
-            }
             // Insert new number
             await pool.query(
                 `INSERT INTO user_phone_numbers (user_id, country_code, phone_number)
@@ -226,6 +219,7 @@ exports.upsertUserPhoneNumbers = async (userId, phoneNumbers = []) => {
         }
     }
 };
+
 
 
 exports.deletePhoneNumbers = async (userId, idsToDelete = []) => {
