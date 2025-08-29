@@ -228,7 +228,7 @@ exports.updateUser = async (req, res) => {
                 }
 
                 const isRegistered = await userModel.isPhoneNumberRegistered(num.phone_number);
-                if (isRegistered && (!num.id || (num.id && num.id !== isRegistered.id))) {
+                if (isRegistered) {
                     return res.status(409).json({ path: 'phone_number', message: 'Phone number already registered' });
                 }
             }

@@ -14,14 +14,13 @@ exports.findUserByEmail = async (email) => {
 };
 
 exports.isPhoneNumberRegistered = async (phone_number) => {
-    if (!phone_number) return null;
+    if (!phone_number) return false;
 
     const { rows } = await pool.query(
-        `SELECT id FROM user_phone_numbers WHERE phone_number = $1 LIMIT 1`,
+        `SELECT 1 FROM user_phone_numbers WHERE phone_number = $1 LIMIT 1`,
         [phone_number]
     );
-
-    return rows[0] || null;
+    return rows.length > 0;
 };
 
 
