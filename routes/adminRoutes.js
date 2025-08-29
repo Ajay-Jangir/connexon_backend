@@ -19,7 +19,7 @@ router.delete('/user/delete/:id', authMiddleware, adminMiddleware, adminControll
 router.post('/user/mass-delete', authMiddleware, adminMiddleware, adminController.massDeleteAnyUsers);
 
 // Membership Plans controllers - only admin
-router.get('/plans', authMiddleware, adminMiddleware, membershipController.getAllPlans);
+router.get('/plans', authMiddleware, adminMiddleware, membershipController.getAllPlansForAdmin);
 router.post('/plans/create', authMiddleware, adminMiddleware, membershipController.createPlan);
 router.put('/plans/:id', authMiddleware, adminMiddleware, membershipController.updatePlan);
 router.delete('/plans/:id', authMiddleware, adminMiddleware, membershipController.deletePlan);

@@ -176,7 +176,8 @@ exports.deletePlan = async (req, res) => {
 };
 
 // Fetch All Membership Plans
-exports.getAllPlans = async (req, res) => {
+// For admin: show all plans
+exports.getAllPlansForAdmin = async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM membership_plans ORDER BY id DESC');
 
@@ -190,3 +191,20 @@ exports.getAllPlans = async (req, res) => {
         res.status(500).json({ path: 'server', message: 'Internal server error' });
     }
 };
+
+// For users: show only active plans
+exports.getAllActivePlans = async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM membership_plans WHERE is_active = true ORDER BY id DESC');
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Active membership plans fetched successfully',
+            data: result.rows
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ path: 'server', message: 'Internal server error' });
+    }
+};
+

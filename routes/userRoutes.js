@@ -8,7 +8,7 @@ router.post('/register', userController.registerUser);
 router.post('/login', userController.login);
 router.put('/update', authMiddleware, userController.updateUser);
 router.get('/myprofile', authMiddleware, userController.getMyProfile);
-router.get('/membershipPlans', authMiddleware, membershipController.getAllPlans);
+router.get('/membershipPlans', authMiddleware, membershipController.getAllActivePlans);
 
 
 module.exports = router;
