@@ -226,7 +226,7 @@ exports.updateUser = async (req, res) => {
             for (const num of phone_numbers) {
                 if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
                     // explicit delete
-                    await userModel.deletePhoneNumberById(num.id);
+                    await userModel.deletePhoneNumbers(userId, [num.id]);
                 } else {
                     // insert/update
                     await userModel.upsertUserPhoneNumber(userId, num);
