@@ -205,6 +205,10 @@ exports.updateUser = async (req, res) => {
             }
 
             for (const num of phone_numbers) {
+                if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
+                    // skip validation here because it's a delete request
+                    continue;
+                }
                 if (!num.phone_number || typeof num.phone_number !== 'string') {
                     return res.status(400).json({ path: 'phone_number', message: 'Each phone_number must be a non-empty string' });
                 }
@@ -219,7 +223,15 @@ exports.updateUser = async (req, res) => {
 
         // ✅ Handle phone numbers (insert/update/delete specific only)
         if (phone_numbers !== undefined) {
-            await userModel.upsertUserPhoneNumbers(userId, phone_numbers);
+            for (const num of phone_numbers) {
+                if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
+                    // explicit delete
+                    await userModel.deletePhoneNumberById(num.id);
+                } else {
+                    // insert/update
+                    await userModel.upsertUserPhoneNumber(userId, num);
+                }
+            }
         }
 
         // ✅ Prevent empty update
@@ -246,6 +258,7 @@ exports.updateUser = async (req, res) => {
         });
     }
 };
+
 
 
 

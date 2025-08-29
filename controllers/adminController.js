@@ -288,15 +288,18 @@ exports.updateAnyUser = async (req, res) => {
             updatedFields.status = status.toLowerCase();
         }
 
-        // Phone numbers - cannot be null
+
+        // ✅ Validate phone_numbers
         if (phone_numbers !== undefined) {
             if (!Array.isArray(phone_numbers)) {
                 return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers must be an array' });
             }
-            if (phone_numbers.length === 0) {
-                return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers cannot be empty' });
-            }
+
             for (const num of phone_numbers) {
+                if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
+                    // skip validation here because it's a delete request
+                    continue;
+                }
                 if (!num.phone_number || typeof num.phone_number !== 'string') {
                     return res.status(400).json({ path: 'phone_number', message: 'Each phone_number must be a non-empty string' });
                 }
@@ -307,27 +310,43 @@ exports.updateAnyUser = async (req, res) => {
                     return res.status(400).json({ path: 'id', message: 'Phone number id must be a number if provided' });
                 }
             }
-            await userModel.upsertUserPhoneNumbers(userId, phone_numbers);
-            const keepIds = phone_numbers.filter(p => p.id).map(p => p.id);
-            await userModel.deletePhoneNumbers(userId, keepIds);
         }
 
+        // ✅ Handle phone numbers (insert/update/delete specific only)
+        if (phone_numbers !== undefined) {
+            for (const num of phone_numbers) {
+                if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
+                    // explicit delete
+                    await userModel.deletePhoneNumberById(num.id);
+                } else {
+                    // insert/update
+                    await userModel.upsertUserPhoneNumber(userId, num);
+                }
+            }
+        }
+
+        // ✅ Prevent empty update
         if (Object.keys(updatedFields).length === 0 && phone_numbers === undefined) {
             return res.status(400).json({ path: 'body', message: 'No valid fields provided for update' });
         }
 
         await userModel.updateUserById(userId, updatedFields);
+
+        // ✅ Fetch the updated user with phones
         const updatedUser = await userModel.findUserByIdWithPhones(userId);
 
         return res.status(200).json({
             status: 'success',
-            message: 'User updated successfully by admin',
+            message: 'User updated successfully',
             data: updatedUser
         });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ path: 'server', message: 'Internal server error' });
+        return res.status(500).json({
+            path: 'server',
+            message: 'Internal server error'
+        });
     }
 };
 
