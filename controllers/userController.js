@@ -272,9 +272,19 @@ exports.updateUser = async (req, res) => {
                 return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers must be an array' });
             }
 
-            for (const num of phone_numbers) {
-                // Skip empty numbers with ID (they will be deleted)
-                if (num.id && (!num.phone_number || num.phone_number.trim() === "")) {
+            for (let i = 0; i < phone_numbers.length; i++) {
+                const num = phone_numbers[i];
+
+                // Protect the first number (cannot delete)
+                if (i === 0 && (!num.phone_number || num.phone_number.trim() === "")) {
+                    return res.status(400).json({
+                        path: 'phone_numbers',
+                        message: 'At least one phone number must remain. Primary number cannot be deleted.'
+                    });
+                }
+
+                // Skip empty numbers with ID (they will be deleted) - other than first
+                if (num.id && i !== 0 && (!num.phone_number || num.phone_number.trim() === "")) {
                     await userModel.deletePhoneNumbers(userId, [num.id]);
                     continue;
                 }
@@ -311,6 +321,7 @@ exports.updateUser = async (req, res) => {
                 await userModel.upsertUserPhoneNumbers(userId, [num]);
             }
         }
+
 
         // ✅ Prevent empty update
         if (Object.keys(updatedFields).length === 0 && phone_numbers === undefined) {
