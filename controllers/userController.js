@@ -148,21 +148,32 @@ exports.login = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
     try {
-        // Authorization header validation
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ path: 'auth', message: 'Authorization token missing or invalid' });
-        }
+        let userId;
 
-        const token = authHeader.split(' ')[1];
-        let decoded;
-        try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (err) {
-            return res.status(401).json({ path: 'auth', message: 'Invalid or expired token' });
-        }
+        // Check if admin is updating any user
+        const isAdmin = req.user?.role === 'admin';
+        if (isAdmin && req.params.id) {
+            userId = parseInt(req.params.id);
+            if (isNaN(userId)) {
+                return res.status(400).json({ path: 'id', message: 'Invalid user ID' });
+            }
+        } else {
+            // Normal user updating their own profile
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ path: 'auth', message: 'Authorization token missing or invalid' });
+            }
 
-        const userId = decoded.id;
+            const token = authHeader.split(' ')[1];
+            let decoded;
+            try {
+                decoded = jwt.verify(token, process.env.JWT_SECRET);
+            } catch (err) {
+                return res.status(401).json({ path: 'auth', message: 'Invalid or expired token' });
+            }
+
+            userId = decoded.id;
+        }
 
         // Check body is present
         if (!req.body || typeof req.body !== 'object') {
@@ -176,7 +187,8 @@ exports.updateUser = async (req, res) => {
             email,
             dob,
             address,
-            phone_numbers
+            phone_numbers,
+            status // admin-only
         } = req.body;
 
         const user = await userModel.findUserById(userId);
@@ -186,6 +198,7 @@ exports.updateUser = async (req, res) => {
 
         const updatedFields = {};
 
+        // First name - cannot be null/empty
         if (first_name !== undefined) {
             if (typeof first_name !== 'string' || first_name.trim() === '') {
                 return res.status(400).json({ path: 'first_name', message: 'First name must be a non-empty string' });
@@ -209,6 +222,7 @@ exports.updateUser = async (req, res) => {
             updatedFields.last_name = last_name === null ? null : last_name.trim();
         }
 
+        // Email - cannot be null
         if (email !== undefined) {
             if (typeof email !== 'string' || !validator.isEmail(email)) {
                 return res.status(400).json({ path: 'email', message: 'Invalid email format or empty' });
@@ -220,6 +234,7 @@ exports.updateUser = async (req, res) => {
             updatedFields.email = email.toLowerCase();
         }
 
+        // Date of birth - can be null
         if (dob !== undefined) {
             if (dob !== null) {
                 const date = new Date(dob);
@@ -232,7 +247,7 @@ exports.updateUser = async (req, res) => {
             }
         }
 
-         // Address - can be null
+        // Address - can be null
         if (address !== undefined) {
             if (address !== null && typeof address !== 'string') {
                 return res.status(400).json({ path: 'address', message: 'Address must be a string or null' });
@@ -240,7 +255,18 @@ exports.updateUser = async (req, res) => {
             updatedFields.address = address === null ? null : address.trim();
         }
 
+        // Status - admin only
+        if (status !== undefined) {
+            if (!isAdmin) {
+                return res.status(403).json({ path: 'status', message: 'Only admins can update status' });
+            }
+            if (!['active', 'blocked'].includes(status.toLowerCase())) {
+                return res.status(400).json({ path: 'status', message: 'Status must be either active or blocked' });
+            }
+            updatedFields.status = status.toLowerCase();
+        }
 
+        // Phone numbers
         if (phone_numbers !== undefined) {
             if (!Array.isArray(phone_numbers)) {
                 return res.status(400).json({ path: 'phone_numbers', message: 'Phone numbers must be an array' });
@@ -286,7 +312,6 @@ exports.updateUser = async (req, res) => {
             }
         }
 
-
         // ✅ Prevent empty update
         if (Object.keys(updatedFields).length === 0 && phone_numbers === undefined) {
             return res.status(400).json({ path: 'body', message: 'No valid fields provided for update' });
@@ -297,9 +322,13 @@ exports.updateUser = async (req, res) => {
         // ✅ Fetch the updated user with phones
         const updatedUser = await userModel.findUserByIdWithPhones(userId);
 
+        const message = isAdmin && req.params.id
+            ? 'User updated successfully by admin'
+            : 'User updated successfully';
+
         return res.status(200).json({
             status: 'success',
-            message: 'User updated successfully',
+            message,
             data: updatedUser
         });
 
@@ -311,9 +340,6 @@ exports.updateUser = async (req, res) => {
         });
     }
 };
-
-
-
 
 exports.getMyProfile = async (req, res) => {
     try {
