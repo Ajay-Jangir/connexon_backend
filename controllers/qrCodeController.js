@@ -129,7 +129,7 @@ exports.createQRCode = async (req, res) => {
         });
 
         // 🔁 Delete old QR codes AFTER successful insertion
-        await qrCodeModel.deleteOldQRCodes(user_id, newQRCode.id);
+        // await qrCodeModel.deleteOldQRCodes(user_id, newQRCode.id);
 
         return res.status(201).json({
             status: 'success',
