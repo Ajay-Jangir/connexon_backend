@@ -122,14 +122,14 @@ exports.createQRCode = async (req, res) => {
         const qrDataUrl = await QRCode.toDataURL(vcardText, { errorCorrectionLevel: 'H' });
 
         // 💾 Save new QR code
-        await qrCodeModel.insertQRCode({
+        const newQrCode = await qrCodeModel.insertQRCode({
             user_id,
             qr_code_data: qrDataUrl,
             vcard: vcardText
         });
 
         // 🔁 Delete old QR codes AFTER successful insertion
-        // await qrCodeModel.deleteOldQRCodes(user_id, newQRCode.id);
+        await qrCodeModel.deleteOldQRCodes(user_id, newQrCode.id);
 
         return res.status(201).json({
             status: 'success',

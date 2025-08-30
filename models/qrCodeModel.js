@@ -70,15 +70,15 @@ exports.insertQRCode = async ({ user_id, qr_code_data, vcard }) => {
         [user_id, qr_code_data, vcard]
     );
 
-    const insertedId = result.rows[0].id;
+    // const insertedId = result.rows[0].id;
 
-    await pool.query(
-        `DELETE FROM qr_codes 
-        WHERE user_id = $1 
-        AND is_active = FALSE 
-        AND id != $2`,
-        [user_id, insertedId]
-    );
+    // await pool.query(
+    //     `DELETE FROM qr_codes 
+    //     WHERE user_id = $1 
+    //     AND is_active = FALSE 
+    //     AND id != $2`,
+    //     [user_id, insertedId]
+    // );
 
     return result.rows[0];
 };
